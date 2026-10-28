@@ -1,0 +1,39 @@
+:root { --visible-height: 100dvh; --visible-top: 0px; -webkit-text-size-adjust: 100%; }
+html { scroll-padding-bottom: calc(var(--dock-height) + 24px); }
+body { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); min-height: 100vh; min-height: 100dvh; }
+main { max-width: 560px; }
+.topbar { position: sticky; top: 0; z-index: 15; background: #fafbf9; padding-top: calc(10px + env(safe-area-inset-top)); padding-bottom: 10px; }
+h1 { font-size: 17px; }
+.menu-panel { max-height: 60dvh; overflow-y: auto; }
+button, summary { -webkit-tap-highlight-color: transparent; }
+button:active:not(:disabled), summary:active { background-color: #e5eee6; }
+.transport .primary:active:not(:disabled) { background-color: #105243; }
+.player-dock { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+.dock-inner { max-width: 560px; }
+.transport { grid-template-columns: repeat(3, minmax(44px, 1fr)) 56px repeat(3, minmax(44px, 1fr)); }
+.transport button { max-width: none; min-height: 48px; }
+.transport .primary { max-width: 56px; }
+.transport .action-icon { width: 34px; }
+.timeline-row { padding-left: 12px; padding-right: 12px; }
+.segment { height: 44px; }
+.marker { min-height: 44px; height: 44px; font-size: 11px; }
+select, textarea { font-size: 16px; }
+dialog { position: fixed; top: calc(var(--visible-top) + 10px); bottom: auto; margin: 0 auto; max-height: calc(var(--visible-height) - 20px); max-height: max(100px, calc(var(--visible-height) - 20px)); padding: 16px; overscroll-behavior: contain; }
+dialog[open] { display: flex; flex-direction: column; gap: 8px; }
+.dialog-heading { flex: 0 0 auto; }
+#note-text { margin-top: 0; min-height: 80px; height: clamp(80px, 28dvh, 220px); flex: 1 1 auto; resize: none; }
+#note-save { flex: 0 0 auto; min-height: 48px; }
+#note-message { margin: 0; }
+.shortcut-key { min-height: 48px; }
+@media (max-width: 359px) {
+  body, .player-dock { padding-left: max(6px, env(safe-area-inset-left)); padding-right: max(6px, env(safe-area-inset-right)); }
+  .transport { grid-template-columns: repeat(7, minmax(44px, 1fr)); }
+  .transport .primary { width: 44px; height: 44px; min-height: 44px; }
+  .transport .action-icon { width: 32px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .topbar { position: static; }
+  .player-dock { padding-top: 0; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+  .playback-info { height: 34px; }
+  .transport { padding-top: 0; }
+}

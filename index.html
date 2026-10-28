@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fafbf9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="My Listening">
+  <title>My Listening</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <script src="layout.js"></script>
+  <script src="app.js" defer></script>
+  <script src="shortcuts.js" defer></script>
+</head>
+<body>
+  <main>
+    <header class="topbar">
+      <h1 id="filename">My Listening</h1>
+      <details id="menu">
+        <summary aria-label="更多选项" title="更多选项">⋯</summary>
+        <div class="menu-panel">
+          <button id="import" type="button">导入音频</button>
+          <label for="layout-choice">界面</label>
+          <select id="layout-choice"><option value="auto">自动识别</option><option value="mobile">移动端</option><option value="desktop">电脑端</option></select>
+          <button id="shortcuts-open" type="button">快捷键</button>
+          <label for="row-length">每行时长</label>
+          <select id="row-length"><option value="30">30 秒</option><option value="60" selected>1 分钟</option><option value="120">2 分钟</option></select>
+        </div>
+      </details>
+    </header>
+    <input id="file" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.mp4" hidden>
+    <audio id="audio" preload="metadata" playsinline></audio>
+    <p id="empty" aria-hidden="true">♫</p>
+    <div id="timeline" aria-label="分行时间轴"></div>
+    <p id="selection" class="sr-only" role="status"></p>
+    <span id="count" class="sr-only"></span>
+    <div class="player-dock" aria-label="播放控制">
+      <div class="dock-inner">
+        <p id="status" class="sr-only" role="status"></p>
+        <p id="storage" class="sr-only" role="status"></p>
+        <div class="playback-info"><div class="times"><span id="current">00:00</span><span aria-hidden="true"> / </span><span id="duration">00:00</span></div><select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></div>
+        <div class="transport">
+          <button id="delete-mark" disabled aria-label="删除当前位置或之前的标记" aria-keyshortcuts="Backspace" title="删除当前位置或之前的标记（Backspace）；删除后方标记（Delete）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path class="solid" d="M2 8h22L13 27z"/><path class="delete-cross" d="m29 4 8 8m0-8-8 8"/><path d="M37 24H27m5-5-5 5 5 5"/></svg></button>
+          <button id="quick-previous" disabled aria-label="上上个标记" aria-keyshortcuts="Control+ArrowLeft" title="上上个标记（Ctrl+←）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path class="solid" d="M1 7h12L7 26zM14 7h12L20 26z"/><path d="M39 16H28m5-5-5 5 5 5"/></svg></button>
+          <button id="previous" disabled aria-label="上一个标记" aria-keyshortcuts="ArrowLeft" title="上一个标记（←）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path class="solid" d="M2 7h22L13 26z"/><path d="M38 16H26m6-6-6 6 6 6"/></svg></button>
+          <button id="play" class="primary" disabled aria-label="播放" aria-keyshortcuts="Space" title="播放 / 暂停（空格）"><svg class="play-icon" viewBox="0 0 32 32" aria-hidden="true"><path id="play-shape" class="solid" d="M9 6 30 16 9 26z"/></svg></button>
+          <button id="next" disabled aria-label="下一个标记" aria-keyshortcuts="ArrowRight" title="下一个标记（→）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path d="M2 16h12m-6-6 6 6-6 6"/><path class="solid" d="M16 7h22L27 26z"/></svg></button>
+          <button id="quick-next" disabled aria-label="下下个标记" aria-keyshortcuts="Control+ArrowRight" title="下下个标记（Ctrl+→）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path d="M1 16h11m-5-5 5 5-5 5"/><path class="solid" d="M14 7h12L20 26zM27 7h12L33 26z"/></svg></button>
+          <button id="add" disabled aria-label="添加时间标记" aria-keyshortcuts="+" title="添加时间标记（+）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path class="solid" d="M2 7h22L13 26z"/><path d="M26 16h12m-6-6v12"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <dialog id="note-dialog" aria-labelledby="note-title">
+      <div class="dialog-heading"><h2 id="note-title">笔记</h2><button id="note-close" aria-label="关闭，不保存修改">×</button></div>
+      <textarea id="note-text" rows="6" aria-label="标记笔记" placeholder="记下没听懂的词、句子或你的理解…"></textarea>
+      <p id="note-message" role="status"></p>
+      <button id="note-save">保存笔记</button>
+    </dialog>
+    <dialog id="shortcuts-dialog" aria-labelledby="shortcuts-title">
+      <div class="dialog-heading"><h2 id="shortcuts-title">快捷键</h2><button id="shortcuts-close" aria-label="关闭">×</button></div>
+      <p class="shortcut-help">点击右侧按键框，再按下想使用的按键或组合键。Esc 取消，Tab 切换。设置自动保存在此浏览器。</p>
+      <div id="shortcut-fields"></div>
+      <p id="shortcut-message" role="status">Mac：delete 通常对应 Backspace；Fn＋Delete 删除后方标记。部分系统快捷键无法被网页接收。</p>
+      <button id="shortcuts-reset">恢复默认</button>
+    </dialog>
+  </main>
+</body>
+</html>
