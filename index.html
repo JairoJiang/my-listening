@@ -12,6 +12,7 @@
   <script src="layout.js"></script>
   <script src="app.js" defer></script>
   <script src="library.js" defer></script>
+  <script src="note-history.js" defer></script>
   <script src="shortcuts.js" defer></script>
 </head>
 <body>
@@ -23,6 +24,7 @@
         <div class="menu-panel">
           <button id="import" type="button">导入音频</button>
           <button id="library-open" type="button">历史材料</button>
+          <button id="note-trash-open" type="button">历史笔记</button>
           <label for="layout-choice">界面</label>
           <select id="layout-choice"><option value="auto">自动识别</option><option value="mobile">移动端</option><option value="desktop">电脑端</option></select>
           <button id="shortcuts-open" type="button">快捷键</button>
@@ -43,6 +45,7 @@
         <p id="storage" class="sr-only" role="status"></p>
         <p id="library-status" class="sr-only" role="status"></p>
         <div class="playback-info"><div class="times"><span id="current">00:00</span><span aria-hidden="true"> / </span><span id="duration">00:00</span></div><select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></div>
+        <button id="notes-open" title="历史笔记" aria-label="打开历史笔记"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/></svg></button>
         <div class="transport">
           <button id="delete-mark" disabled aria-label="删除当前位置或之前的标记" aria-keyshortcuts="Backspace" title="删除当前位置或之前的标记（Backspace）；删除后方标记（Delete）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path class="solid" d="M2 8h22L13 27z"/><path class="delete-cross" d="m29 4 8 8m0-8-8 8"/><path d="M37 24H27m5-5-5 5 5 5"/></svg></button>
           <button id="quick-previous" disabled aria-label="上上个标记" aria-keyshortcuts="Control+ArrowLeft" title="上上个标记（Ctrl+←）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path class="solid" d="M1 7h12L7 26zM14 7h12L20 26z"/><path d="M39 16H28m5-5-5 5 5 5"/></svg></button>
@@ -54,6 +57,15 @@
         </div>
       </div>
     </div>
+    <section id="notes-page" hidden role="dialog" aria-modal="false" aria-labelledby="notes-page-title">
+      <header class="notes-page-heading"><h2 id="notes-page-title" class="sr-only">历史笔记</h2><button id="notes-back" aria-label="关闭历史笔记">×</button></header>
+      <p id="notes-page-message" role="status"></p>
+      <div id="notes-list"></div>
+    </section>
+    <section id="note-detail-window" hidden role="dialog" aria-modal="false" aria-labelledby="note-detail-title">
+      <header class="notes-page-heading"><h2 id="note-detail-title" class="sr-only">笔记详情</h2><button id="note-detail-close" aria-label="关闭笔记详情">×</button></header>
+      <div id="note-detail-content"></div>
+    </section>
     <dialog id="library-dialog" aria-labelledby="library-title">
       <div class="dialog-heading"><h2 id="library-title">历史材料</h2><button id="library-close" aria-label="关闭">×</button></div>
       <p id="library-message" role="status"></p>

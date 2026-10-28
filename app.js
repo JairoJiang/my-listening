@@ -6,6 +6,8 @@ let timelineRows = [];
 let selectedMark = null;
 let marks = [];
 let notes = {};
+let deletedNotes = [];
+const noteRetention = 15 * 24 * 60 * 60 * 1000;
 let editingMark = null;
 let storageKey = "";
 let objectURL = "";
@@ -14,7 +16,9 @@ let loadVersion = 0;
 let pendingSession = null;
 let lastCheckpoint = 0;
 const tolerance = 0.15;
-const markerLaneHeight = document.documentElement.dataset.layout === "mobile" ? 44 : 24;
+const markerLaneHeight = 24;
+const floatingMarkers = document.documentElement.dataset.layout === "mobile";
+const visibleMarkerLanes = floatingMarkers ? 1 : 2;
 
 function formatTime(seconds) {
   const total = Math.floor(Number.isFinite(seconds) ? seconds : 0);
@@ -72,6 +76,7 @@ function saveMarks() {
 function restoreMarks() {
   marks = [];
   notes = {};
+  deletedNotes = [];
   element("storage").className = "sr-only";
   try {
     let local = null;
@@ -79,9 +84,10 @@ function restoreMarks() {
     const saved = (pendingSession?.updatedAt || 0) > (local?.updatedAt || 0) ? pendingSession : (local || pendingSession || []);
     const savedMarks = Array.isArray(saved) ? saved : saved?.marks;
     if (Array.isArray(savedMarks)) marks = [...new Set(savedMarks.filter((time) => typeof time === "number" && Number.isFinite(time) && time >= 0 && time <= audio.duration))].sort((first, second) => first - second);
-    marks.forEach((time) => {
-      if (typeof saved?.notes?.[time] === "string") notes[time] = saved.notes[time];
+    Object.entries(saved?.notes || {}).forEach(([time, content]) => {
+      if (Number.isFinite(Number(time)) && Number(time) >= 0 && typeof content === "string") notes[time] = content;
     });
+    deletedNotes = cleanDeletedNotes(saved?.deletedNotes);
     const position = Number.isFinite(saved.position) ? saved.position : 0;
     audio.currentTime = Math.max(0, Math.min(position, audio.duration));
     if ([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].includes(saved.rate)) {
@@ -99,7 +105,17 @@ function restoreMarks() {
 }
 
 function currentSession() {
-  return { marks: [...marks], notes: { ...notes }, position: audio.currentTime || 0, rate: Number(element("speed").value), rowLength: Number(element("row-length").value), updatedAt: Date.now() };
+  return { marks: [...marks], notes: { ...notes }, deletedNotes: deletedNotes.map((note) => ({ ...note })), position: audio.currentTime || 0, rate: Number(element("speed").value), rowLength: Number(element("row-length").value), updatedAt: Date.now() };
+}
+
+function cleanDeletedNotes(entries) {
+  return Array.isArray(entries) ? entries.filter((note) => typeof note?.id === "string" && typeof note.content === "string" && Number.isFinite(note.time) && note.time >= 0 && Number.isFinite(note.deletedAt) && Date.now() - note.deletedAt < noteRetention) : [];
+}
+
+function archiveNote(time) {
+  if (!notes[time]) return;
+  deletedNotes.push({ id: crypto.randomUUID(), time: Number(time), content: notes[time], deletedAt: Date.now() });
+  delete notes[time];
 }
 
 function checkpoint() {
@@ -138,6 +154,14 @@ function renderMarks() {
     labels.append(from, to);
     const markers = document.createElement("div");
     markers.className = "marker-track";
+    const markerViewport = document.createElement("div");
+    markerViewport.className = "marker-viewport";
+    markerViewport.setAttribute("aria-label", `第 ${index + 1} 行标记${floatingMarkers ? "" : "，密集时可上下滚动"}`);
+    markerViewport.append(markers);
+    const bridges = document.createElement("div");
+    bridges.className = "marker-bridges";
+    bridges.setAttribute("aria-hidden", "true");
+    const bridgeEntries = [];
     const slider = document.createElement("input");
     slider.type = "range";
     slider.className = "segment";
@@ -146,7 +170,7 @@ function renderMarks() {
     slider.step = "0.01";
     slider.setAttribute("aria-label", `第 ${index + 1} 行，${formatTime(start)} 至 ${formatTime(end)}`);
     slider.addEventListener("input", () => seek(Number(slider.value)));
-    row.append(labels, markers, slider);
+    row.append(labels, markerViewport, bridges, slider);
     element("timeline").append(row);
     const laneEnds = [];
     marks.filter((time) => time >= start && (time < end || (index === rowCount - 1 && time === end))).forEach((time) => {
@@ -155,9 +179,18 @@ function renderMarks() {
       let lane = laneEnds.findIndex((last) => pixel - last >= 44);
       if (lane === -1) lane = laneEnds.length;
       laneEnds[lane] = pixel;
+      const bridge = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      bridge.setAttribute("class", "marker-bridge");
+      bridge.setAttribute("aria-hidden", "true");
+      const shape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      shape.setAttribute("class", "marker-shape");
+      bridge.append(shape);
+      bridge.dataset.time = String(time);
+      bridge.style.left = `${position * 100}%`;
+      bridges.append(bridge);
+      bridgeEntries.push({ bridge, shape, lane });
       const marker = document.createElement("button");
       marker.className = "marker";
-      marker.textContent = "▼";
       marker.style.left = `${position * 100}%`;
       marker.style.bottom = `${lane * markerLaneHeight}px`;
       marker.dataset.time = String(time);
@@ -171,19 +204,42 @@ function renderMarks() {
       });
       markers.append(marker);
     });
-    markers.style.height = `${laneEnds.length * markerLaneHeight}px`;
+    markers.style.height = `${(floatingMarkers ? visibleMarkerLanes : Math.max(visibleMarkerLanes, laneEnds.length)) * markerLaneHeight}px`;
+    if (!floatingMarkers && laneEnds.length > visibleMarkerLanes) {
+      markerViewport.tabIndex = 0;
+      markerViewport.title = "此处有密集标记，可在标记区域上下滚动查看";
+    }
+    markerViewport.scrollTop = markerViewport.scrollHeight;
+    const updateBridges = () => {
+      const viewportHeight = markerViewport.clientHeight;
+      const bottom = viewportHeight + slider.offsetHeight / 2;
+      bridgeEntries.forEach(({ bridge, shape, lane }) => {
+        const top = markers.offsetHeight - (lane * markerLaneHeight + markerLaneHeight / 2 + 4.5) - markerViewport.scrollTop;
+        bridge.style.display = top >= viewportHeight ? "none" : "block";
+        bridge.style.top = `${-viewportHeight}px`;
+        bridge.style.height = `${bottom + 2}px`;
+        bridge.setAttribute("viewBox", `0 0 20 ${bottom + 2}`);
+        shape.setAttribute("d", `M2 ${top} H14 L11 ${top + 4.5} L14 ${top + 9} H4 V${bottom} H2 Z`);
+      });
+    };
+    markerViewport.addEventListener("scroll", updateBridges, { passive: true });
+    updateBridges();
     timelineRows.push({ row, slider, start, end });
   }
   updateSelection();
   updateProgress();
+  if (typeof refreshNotePresence === "function") refreshNotePresence();
 }
 
 function updateSelection() {
   if (!marks.includes(selectedMark)) selectedMark = null;
   element("delete-mark").disabled = !ready;
-  element("selection").textContent = selectedMark === null ? "点击黄色 ▼ 可跳转。" : `已跳转到 ${formatTime(selectedMark)} 的标记。`;
+  element("selection").textContent = selectedMark === null ? "点击红色小旗可跳转并打开笔记。" : `已跳转到 ${formatTime(selectedMark)} 的标记。`;
   element("timeline").querySelectorAll(".marker").forEach((marker) => {
     marker.setAttribute("aria-pressed", String(Number(marker.dataset.time) === selectedMark));
+  });
+  element("timeline").querySelectorAll(".marker-bridge").forEach((part) => {
+    part.classList.toggle("selected", Number(part.dataset.time) === selectedMark);
   });
 }
 
@@ -226,6 +282,7 @@ function loadMaterial(file, key, session = null) {
   if (objectURL) URL.revokeObjectURL(objectURL);
   marks = [];
   notes = {};
+  deletedNotes = [];
   editingMark = null;
   if (element("note-dialog").open) element("note-dialog").close();
   renderMarks();
@@ -249,6 +306,7 @@ audio.addEventListener("loadedmetadata", () => {
   audio.playbackRate = Number(element("speed").value);
   element("duration").textContent = formatTime(audio.duration);
   restoreMarks();
+  checkpoint();
   announce(marks.length ? `已恢复 ${marks.length} 个标记，点击播放开始。` : "准备好了，点击播放开始。");
 });
 audio.addEventListener("error", () => {
@@ -292,7 +350,6 @@ function deleteMark(direction) {
     return;
   }
   marks = marks.filter((mark) => mark !== time);
-  delete notes[time];
   if (selectedMark === time) selectedMark = null;
   saveMarks();
   renderMarks();
@@ -326,10 +383,10 @@ function openNote(time) {
 }
 
 element("note-save").addEventListener("click", () => {
-  if (editingMark === null || !marks.includes(editingMark)) return;
+  if (editingMark === null || !ready) return;
   const content = element("note-text").value;
   if (content) notes[editingMark] = content;
-  else delete notes[editingMark];
+  else archiveNote(editingMark);
   if (saveMarks()) {
     element("note-dialog").close();
     renderMarks();

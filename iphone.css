@@ -7,23 +7,24 @@ h1 { font-size: 17px; }
 .menu-panel { max-height: 60dvh; overflow-y: auto; }
 button, summary { -webkit-tap-highlight-color: transparent; }
 button:active:not(:disabled), summary:active { background-color: #e5eee6; }
+.marker:active:not(:disabled) { background-color: transparent; }
 .transport .primary:active:not(:disabled) { background-color: #105243; }
 .player-dock { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 .dock-inner { max-width: 560px; }
 .transport { grid-template-columns: repeat(2, minmax(44px, 1fr)) 68px repeat(2, minmax(44px, 1fr)); grid-template-rows: 58px 58px; gap: 6px 2px; min-height: 126px; }
 .transport button { max-width: none; min-height: 56px; height: 56px; }
-#quick-previous { grid-area: 1 / 1; }
-#quick-next { grid-area: 1 / 2; }
-#previous { grid-area: 1 / 4; }
-#next { grid-area: 1 / 5; }
+#quick-previous { grid-area: 1 / 4; }
+#quick-next { grid-area: 1 / 5; }
+#previous { grid-area: 1 / 1; }
+#next { grid-area: 1 / 2; }
 #add { grid-area: 2 / 1 / 3 / 3; }
 #delete-mark { grid-area: 2 / 4 / 3 / 6; }
 .transport .primary { grid-area: 1 / 3 / 3 / 4; align-self: center; width: 68px; height: 68px; max-width: 68px; }
 .transport .action-icon { width: 44px; height: 39px; }
 .transport .play-icon { width: 42px; height: 42px; }
 .timeline-row { padding-left: 12px; padding-right: 12px; }
-.segment { height: 44px; }
-.marker { min-height: 44px; height: 44px; font-size: 11px; }
+.marker-viewport { height: 24px; overflow: visible; }
+.marker-bridge { overflow: visible; }
 select, textarea { font-size: 16px; }
 dialog { position: fixed; top: calc(var(--visible-top) + 10px); bottom: auto; margin: 0 auto; max-height: calc(var(--visible-height) - 20px); max-height: max(100px, calc(var(--visible-height) - 20px)); padding: 16px; overscroll-behavior: contain; }
 dialog[open] { display: flex; flex-direction: column; gap: 8px; }
