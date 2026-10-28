@@ -11,6 +11,8 @@ let storageKey = "";
 let objectURL = "";
 let ready = false;
 let loadVersion = 0;
+let pendingSession = null;
+let lastCheckpoint = 0;
 const tolerance = 0.15;
 const markerLaneHeight = document.documentElement.dataset.layout === "mobile" ? 44 : 24;
 
@@ -53,10 +55,12 @@ function setReady(value) {
 }
 
 function saveMarks() {
+  const session = currentSession();
+  if (typeof persistSession === "function") persistSession(storageKey, session);
   try {
-    localStorage.setItem(storageKey, JSON.stringify({ marks, notes }));
+    localStorage.setItem(storageKey, JSON.stringify(session));
     element("storage").className = "sr-only";
-    element("storage").textContent = "标记已保存在此浏览器。下次请选择同一个音频。";
+    element("storage").textContent = "标记和笔记已保存在此浏览器。";
     return true;
   } catch {
     element("storage").className = "notice";
@@ -70,18 +74,39 @@ function restoreMarks() {
   notes = {};
   element("storage").className = "sr-only";
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    let local = null;
+    try { local = JSON.parse(localStorage.getItem(storageKey) || "null"); } catch {}
+    const saved = (pendingSession?.updatedAt || 0) > (local?.updatedAt || 0) ? pendingSession : (local || pendingSession || []);
     const savedMarks = Array.isArray(saved) ? saved : saved?.marks;
     if (Array.isArray(savedMarks)) marks = [...new Set(savedMarks.filter((time) => typeof time === "number" && Number.isFinite(time) && time >= 0 && time <= audio.duration))].sort((first, second) => first - second);
     marks.forEach((time) => {
       if (typeof saved?.notes?.[time] === "string") notes[time] = saved.notes[time];
     });
-    element("storage").textContent = "标记保存在此浏览器。下次请选择同一个音频。";
+    const position = Number.isFinite(saved.position) ? saved.position : 0;
+    audio.currentTime = Math.max(0, Math.min(position, audio.duration));
+    if ([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].includes(saved.rate)) {
+      element("speed").value = String(saved.rate);
+      audio.playbackRate = saved.rate;
+    }
+    if ([30, 60, 120].includes(saved.rowLength)) element("row-length").value = String(saved.rowLength);
+    element("storage").textContent = "已恢复播放进度、标记和笔记。";
   } catch {
     element("storage").className = "notice";
     element("storage").textContent = "无法读取已保存标记，本次可以重新添加。";
   }
   renderMarks();
+  pendingSession = null;
+}
+
+function currentSession() {
+  return { marks: [...marks], notes: { ...notes }, position: audio.currentTime || 0, rate: Number(element("speed").value), rowLength: Number(element("row-length").value), updatedAt: Date.now() };
+}
+
+function checkpoint() {
+  if (!ready || !storageKey) return;
+  const session = currentSession();
+  try { localStorage.setItem(storageKey, JSON.stringify(session)); } catch {}
+  if (typeof persistSession === "function") persistSession(storageKey, session);
 }
 
 function seek(time) {
@@ -187,6 +212,12 @@ function jumpMark(direction, steps = 1) {
 element("file").addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (!file) return;
+  importMaterial(file);
+  event.target.value = "";
+});
+
+function loadMaterial(file, key, session = null) {
+  checkpoint();
   loadVersion += 1;
   audio.pause();
   setReady(false);
@@ -201,13 +232,13 @@ element("file").addEventListener("change", (event) => {
   element("current").textContent = "00:00";
   element("duration").textContent = "00:00";
   element("filename").textContent = file.name;
-  storageKey = `my-listening:v1:${JSON.stringify([file.name, file.size, file.lastModified])}`;
+  storageKey = key;
+  pendingSession = session;
   objectURL = URL.createObjectURL(file);
   audio.src = objectURL;
   audio.load();
   announce("正在读取音频…");
-  event.target.value = "";
-});
+}
 
 audio.addEventListener("loadedmetadata", () => {
   if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
@@ -227,6 +258,12 @@ audio.addEventListener("error", () => {
   announce("无法播放此音频，请尝试 MP3 / M4A，或确认文件已下载到设备。", true);
 });
 audio.addEventListener("timeupdate", updateProgress);
+audio.addEventListener("timeupdate", () => {
+  if (Date.now() - lastCheckpoint >= 1000) { lastCheckpoint = Date.now(); checkpoint(); }
+});
+for (const name of ["pause", "seeked", "ratechange", "ended"]) audio.addEventListener(name, checkpoint);
+document.addEventListener("visibilitychange", () => { if (document.hidden) checkpoint(); });
+window.addEventListener("pagehide", checkpoint);
 for (const name of ["play", "pause", "ended", "emptied"]) audio.addEventListener(name, () => {
   element("play-shape").setAttribute("d", audio.paused ? "M9 6 30 16 9 26z" : "M7 6h6v20H7zM19 6h6v20h-6z");
   element("play").setAttribute("aria-label", audio.paused ? "播放" : "暂停");
@@ -239,7 +276,7 @@ element("play").addEventListener("click", async () => {
   catch { if (version === loadVersion) announce("播放未能开始，请再点一次播放，或尝试其他音频。", true); }
 });
 element("speed").addEventListener("change", () => { audio.playbackRate = Number(element("speed").value); });
-element("row-length").addEventListener("change", renderMarks);
+element("row-length").addEventListener("change", () => { renderMarks(); checkpoint(); });
 let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);

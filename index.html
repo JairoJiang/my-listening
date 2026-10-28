@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="layout.js"></script>
   <script src="app.js" defer></script>
+  <script src="library.js" defer></script>
   <script src="shortcuts.js" defer></script>
 </head>
 <body>
@@ -21,6 +22,7 @@
         <summary aria-label="更多选项" title="更多选项">⋯</summary>
         <div class="menu-panel">
           <button id="import" type="button">导入音频</button>
+          <button id="library-open" type="button">历史材料</button>
           <label for="layout-choice">界面</label>
           <select id="layout-choice"><option value="auto">自动识别</option><option value="mobile">移动端</option><option value="desktop">电脑端</option></select>
           <button id="shortcuts-open" type="button">快捷键</button>
@@ -39,6 +41,7 @@
       <div class="dock-inner">
         <p id="status" class="sr-only" role="status"></p>
         <p id="storage" class="sr-only" role="status"></p>
+        <p id="library-status" class="sr-only" role="status"></p>
         <div class="playback-info"><div class="times"><span id="current">00:00</span><span aria-hidden="true"> / </span><span id="duration">00:00</span></div><select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></div>
         <div class="transport">
           <button id="delete-mark" disabled aria-label="删除当前位置或之前的标记" aria-keyshortcuts="Backspace" title="删除当前位置或之前的标记（Backspace）；删除后方标记（Delete）"><svg class="action-icon" viewBox="0 0 40 32" aria-hidden="true"><path class="solid" d="M2 8h22L13 27z"/><path class="delete-cross" d="m29 4 8 8m0-8-8 8"/><path d="M37 24H27m5-5-5 5 5 5"/></svg></button>
@@ -51,6 +54,11 @@
         </div>
       </div>
     </div>
+    <dialog id="library-dialog" aria-labelledby="library-title">
+      <div class="dialog-heading"><h2 id="library-title">历史材料</h2><button id="library-close" aria-label="关闭">×</button></div>
+      <p id="library-message" role="status"></p>
+      <div id="library-list"></div>
+    </dialog>
     <dialog id="note-dialog" aria-labelledby="note-title">
       <div class="dialog-heading"><h2 id="note-title">笔记</h2><button id="note-close" aria-label="关闭，不保存修改">×</button></div>
       <textarea id="note-text" rows="6" aria-label="标记笔记" placeholder="记下没听懂的词、句子或你的理解…"></textarea>

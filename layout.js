@@ -40,7 +40,7 @@ window.addEventListener("resize", updateMobileViewport);
 document.addEventListener("DOMContentLoaded", () => {
   const choice = document.getElementById("layout-choice");
   choice.value = layoutPreference;
-  choice.title = "切换界面会重新加载页面，需要重新选择音频";
+  choice.title = "切换界面会重新加载页面，并尝试恢复上次材料";
   choice.addEventListener("change", () => {
     try { localStorage.setItem("my-listening:layout:v1", choice.value); } catch {}
     const destination = new URL(window.location.href);

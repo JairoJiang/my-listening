@@ -60,3 +60,8 @@ dialog::backdrop { background: #14261e66; }
 #note-close { width: 44px; font-size: 26px; }
 #note-save { background: #176454; color: white; padding: 10px 18px; }
 #note-message { color: #97412c; font-size: 13px; line-height: 1.5; }
+#library-list { display: grid; gap: 8px; overflow-y: auto; }
+.library-item { text-align: left; border: 1px solid #d0d9d1; padding: 12px; overflow-wrap: anywhere; }
+.library-item small { display: block; color: #657269; margin-top: 6px; }
+#library-close { width: 44px; font-size: 26px; }
+#library-message { font-size: 13px; line-height: 1.5; }
