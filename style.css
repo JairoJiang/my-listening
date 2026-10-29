@@ -2,7 +2,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0 max(20px, env(safe-area-inset-right)) calc(var(--dock-height) + 24px) max(20px, env(safe-area-inset-left)); }
 main { max-width: 640px; margin: auto; }
-.topbar { display: flex; align-items: center; gap: 16px; padding: calc(18px + env(safe-area-inset-top)) 0 18px; }
+.topbar { position: sticky; top: 0; z-index: 20; background: #fafbf9; display: flex; align-items: center; gap: 16px; padding: calc(18px + env(safe-area-inset-top)) 0 18px; }
 h1 { flex: 1; min-width: 0; font-size: 18px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
 button, select, summary { font: inherit; min-height: 44px; color: inherit; cursor: pointer; touch-action: manipulation; }
 button { border: 0; background: transparent; border-radius: 12px; padding: 8px; }
@@ -17,6 +17,7 @@ summary::-webkit-details-marker { display: none; }
 .menu-panel button { display: block; width: 100%; text-align: left; }
 .menu-panel label { display: block; padding: 12px 8px 0; font-size: 12px; color: #748077; }
 .menu-panel select { width: 100%; }
+.menu-panel { max-height: calc(100dvh - var(--topbar-height, 90px) - 16px); overflow-y: auto; }
 #empty { text-align: center; font-size: 48px; color: #cbd2cb; margin: 22vh 0; }
 .timeline-row { padding: 5px 12px 2px; margin: 2px 0; border-radius: 6px; }
 .timeline-row.active { background: #f0f4ef; }
@@ -91,3 +92,30 @@ dialog::backdrop { background: #14261e66; }
 .note-history-row.orphan-note .note-preview { color: #c03d44; }
 #notes-back, #note-detail-close { width: 44px; font-size: 25px; }
 #note-detail-content { min-height: 0; white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; line-height: 1.7; }
+html[data-layout="desktop"].has-video main { max-width: 1200px; }
+html[data-layout="desktop"].has-video #media-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+#media-workspace > #timeline { min-width: 0; }
+#video-stage { position: sticky; top: 20px; overflow: hidden; border-radius: 16px; background: #161923; color: white; }
+#video-stage[hidden] { display: none; }
+html[data-layout="desktop"] #video-stage:not(:fullscreen) { top: calc(var(--topbar-height, 90px) + 12px); }
+#audio { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #10121a; }
+.video-toolbar { display: flex; justify-content: space-between; padding: 6px 12px; }
+.video-toolbar button { color: white; font-size: 25px; min-width: 44px; }
+#fullscreen-controls { display: none; }
+#video-stage:fullscreen { position: relative; top: 0; width: 100%; height: 100%; border-radius: 0; display: flex; flex-direction: column; }
+#video-stage:fullscreen #audio { flex: 1 1 0; min-height: 0; height: 0; aspect-ratio: auto; }
+#video-stage:fullscreen .video-toolbar { display: none; }
+#video-stage:fullscreen #fullscreen-controls { display: block; flex: 0 0 auto; padding: 8px 24px 16px; background: #161923; }
+#fullscreen-progress { display: block; width: 100%; margin: 0; height: 32px; accent-color: #8fa1ff; }
+#fullscreen-markers { position: relative; overflow-y: auto; overflow-x: hidden; min-height: 32px; max-height: 96px; }
+.fullscreen-marker { position: absolute; width: 32px; height: 32px; min-height: 32px; padding: 0; transform: translateX(-50%); color: #ef737b; font-size: 24px; }
+.fullscreen-toolbar { display: flex; align-items: center; gap: 16px; }
+.fullscreen-toolbar button { color: white; font-size: 24px; min-width: 44px; }
+#fullscreen-time { flex: 1; font-size: 13px; font-variant-numeric: tabular-nums; }
+#fullscreen-message { margin: 0; font-size: 13px; color: #ffb8be; }
+#video-stage #note-dialog { color: #27332f; }
+html[data-layout="mobile"] #video-stage { position: relative; top: 0; margin-bottom: 12px; }
+#backup-close { width: 44px; font-size: 25px; }
+#backup-message { line-height: 1.7; overflow-wrap: anywhere; }
+#backup-download, #backup-confirm { padding: 12px 16px; background: #176454; color: white; border-radius: 12px; text-align: center; text-decoration: none; }
+#backup-download:not([hidden]) { display: block; }

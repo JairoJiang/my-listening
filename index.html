@@ -8,12 +8,18 @@
   <meta name="apple-mobile-web-app-title" content="My Listening">
   <title>My Listening</title>
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
   <script src="layout.js"></script>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
   <script src="app.js" defer></script>
+  <script src="video.js" defer></script>
   <script src="library.js" defer></script>
   <script src="note-history.js" defer></script>
   <script src="shortcuts.js" defer></script>
+  <script src="backup.js" defer></script>
 </head>
 <body>
   <main>
@@ -22,9 +28,12 @@
       <details id="menu">
         <summary aria-label="更多选项" title="更多选项">⋯</summary>
         <div class="menu-panel">
-          <button id="import" type="button">导入音频</button>
+          <button id="import" type="button">导入音频 / 视频</button>
           <button id="library-open" type="button">历史材料</button>
           <button id="note-trash-open" type="button">历史笔记</button>
+          <button id="theme-toggle" type="button" aria-pressed="false">夜间模式</button>
+          <button id="backup-export" type="button">导出备份</button>
+          <button id="backup-restore" type="button">恢复备份</button>
           <label for="layout-choice">界面</label>
           <select id="layout-choice"><option value="auto">自动识别</option><option value="mobile">移动端</option><option value="desktop">电脑端</option></select>
           <button id="shortcuts-open" type="button">快捷键</button>
@@ -33,10 +42,22 @@
         </div>
       </details>
     </header>
-    <input id="file" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.mp4" hidden>
-    <audio id="audio" preload="metadata" playsinline></audio>
+    <input id="file" type="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.aac,.mp4,.m4v,.mov,.webm" hidden>
+    <input id="backup-file" type="file" accept=".json,application/json" hidden>
     <p id="empty" aria-hidden="true">♫</p>
-    <div id="timeline" aria-label="分行时间轴"></div>
+    <div id="media-workspace">
+      <section id="video-stage" hidden aria-label="视频播放器">
+        <video id="audio" preload="metadata" playsinline></video>
+        <div class="video-toolbar"><button id="video-play" disabled aria-label="播放 / 暂停">▶</button><button id="video-fullscreen" disabled aria-label="全屏视频" title="全屏视频">⛶</button></div>
+        <div id="fullscreen-controls">
+          <div id="fullscreen-markers" aria-label="视频标记"></div>
+          <input id="fullscreen-progress" type="range" min="0" max="0" step="0.01" value="0" aria-label="视频整体播放进度">
+          <div class="fullscreen-toolbar"><button id="fullscreen-play" aria-label="播放 / 暂停">▶</button><span id="fullscreen-time">00:00 / 00:00</span><button id="fullscreen-add" aria-label="添加标记" title="添加标记（+）">＋</button><button id="fullscreen-exit" aria-label="退出全屏">⛶</button></div>
+          <p id="fullscreen-message" role="status"></p>
+        </div>
+      </section>
+      <div id="timeline" aria-label="分行时间轴"></div>
+    </div>
     <p id="selection" class="sr-only" role="status"></p>
     <span id="count" class="sr-only"></span>
     <div class="player-dock" aria-label="播放控制">
@@ -66,6 +87,12 @@
       <header class="notes-page-heading"><h2 id="note-detail-title" class="sr-only">笔记详情</h2><button id="note-detail-close" aria-label="关闭笔记详情">×</button></header>
       <div id="note-detail-content"></div>
     </section>
+    <dialog id="backup-dialog" aria-labelledby="backup-title">
+      <div class="dialog-heading"><h2 id="backup-title">备份</h2><button id="backup-close" aria-label="关闭">×</button></div>
+      <p id="backup-message" role="status"></p>
+      <a id="backup-download" hidden download>下载备份文件</a>
+      <button id="backup-confirm" hidden>合并恢复</button>
+    </dialog>
     <dialog id="library-dialog" aria-labelledby="library-title">
       <div class="dialog-heading"><h2 id="library-title">历史材料</h2><button id="library-close" aria-label="关闭">×</button></div>
       <p id="library-message" role="status"></p>

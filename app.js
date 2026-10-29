@@ -56,6 +56,8 @@ function setReady(value) {
   ready = value;
   for (const id of ["play", "add", "previous", "next", "quick-previous", "quick-next"]) element(id).disabled = !value;
   element("delete-mark").disabled = !value;
+  element("video-play").disabled = !value;
+  element("video-fullscreen").disabled = !value;
 }
 
 function saveMarks() {
@@ -132,6 +134,7 @@ function seek(time) {
 }
 
 function renderMarks() {
+  if (typeof renderVideoMarks === "function") renderVideoMarks();
   element("timeline").replaceChildren();
   timelineRows = [];
   element("empty").hidden = ready;
@@ -244,6 +247,7 @@ function updateSelection() {
 }
 
 function updateProgress() {
+  if (typeof updateVideoProgress === "function") updateVideoProgress();
   element("current").textContent = formatTime(audio.currentTime);
   timelineRows.forEach(({ row, slider, start, end }, index) => {
     const time = audio.currentTime || 0;
@@ -277,6 +281,7 @@ function loadMaterial(file, key, session = null) {
   loadVersion += 1;
   audio.pause();
   setReady(false);
+  if (typeof resetVideoView === "function") resetVideoView();
   audio.removeAttribute("src");
   audio.load();
   if (objectURL) URL.revokeObjectURL(objectURL);
@@ -299,7 +304,7 @@ function loadMaterial(file, key, session = null) {
 
 audio.addEventListener("loadedmetadata", () => {
   if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
-    announce("无法读取音频时长，请尝试 MP3 或 M4A 文件。", true);
+    announce("无法读取媒体时长，请尝试其他音频或视频格式。", true);
     return;
   }
   setReady(true);
@@ -313,7 +318,7 @@ audio.addEventListener("error", () => {
   if (!audio.getAttribute("src")) return;
   setReady(false);
   renderMarks();
-  announce("无法播放此音频，请尝试 MP3 / M4A，或确认文件已下载到设备。", true);
+  announce("无法播放此媒体，请尝试浏览器支持的音频或视频格式，或确认文件已下载到设备。", true);
 });
 audio.addEventListener("timeupdate", updateProgress);
 audio.addEventListener("timeupdate", () => {

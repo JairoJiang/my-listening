@@ -141,7 +141,7 @@ document.addEventListener("keydown", (event) => {
     element("shortcut-fields").querySelectorAll("button")[index].focus();
     return;
   }
-  if (!ready || element("library-dialog").open || element("note-dialog").open || element("menu").open || event.target.closest('input:not([type="range"]), select, textarea, [contenteditable], summary, #notes-page, #note-detail-window')) return;
+  if (!ready || element("backup-dialog").open || element("library-dialog").open || element("note-dialog").open || element("menu").open || event.target.closest('input:not([type="range"]), select, textarea, [contenteditable], summary, #notes-page, #note-detail-window')) return;
   const index = shortcutBindings.findIndex((binding) => bindingSignature(binding) === bindingSignature(bindingFromEvent(event)));
   if (index === -1) return;
   event.preventDefault();

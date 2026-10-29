@@ -4,6 +4,7 @@ body { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12
 main { max-width: 560px; }
 .topbar { position: sticky; top: 0; z-index: 15; background: #fafbf9; padding-top: calc(10px + env(safe-area-inset-top)); padding-bottom: 10px; }
 h1 { font-size: 17px; }
+#shortcuts-open { display: none; }
 .menu-panel { max-height: 60dvh; overflow-y: auto; }
 button, summary { -webkit-tap-highlight-color: transparent; }
 button:active:not(:disabled), summary:active { background-color: #e5eee6; }
